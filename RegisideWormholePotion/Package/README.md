@@ -1,14 +1,14 @@
-﻿# JotunnModStub
-Upon building for release, this README.md is copied into the `Package` folder for thunderstore packaging. Remember to also edit the manifest.json and supply your own mod icon.
+# Wormhole Potion Mod for Valheim
 
-## Installation (manual)
+A Valheim mod that adds a potion to let the player teleport to their friends location on use. 
 
+## About
+The plugin adds a recipe to the cauldron which allows the player to make "potion of firth's bond." Upon drinking the potion the map will open and allow the user to click on a friend to be teleported to their location. At the moment you can not use the potion if you are carrying ores, but I plan to make that configurable in a future version.
 
-## Features
+### Recipe
+The current recipe is: 10 yellow mushrooms, 3 Raspberry, and 1 Pike.
 
+## Technical details
+ This is an early version of the mod so feel free to send your thoughts and feedback on the [github page.](https://github.com/regiside/valheim-wormhole-potion)
 
-## Changelog
-
-
-## Known issues
-You can find the github at:
+Built using [Jötunn](https://github.com/Valheim-Modding/Jotunn) project stub.

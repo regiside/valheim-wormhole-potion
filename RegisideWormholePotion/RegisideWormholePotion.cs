@@ -12,6 +12,9 @@ using UnityEngine;
 namespace RegisideWormholePotion
 {
     [BepInPlugin("com.jotunn.ValheimTeleportPlugin", "Teleport to Player (Jotunn)", "1.0.2")]
+    [BepInDependency(Jotunn.Main.ModGuid)]
+    [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
+
     public class RegisideWormholePotion : BaseUnityPlugin
     {
         public const string PluginGUID = "com.jotunn.RegisideWormholePotion";
@@ -33,19 +36,21 @@ namespace RegisideWormholePotion
             // Load, create and init your custom mod stuff
             AddStatusEffects();
 
-
             PrefabManager.OnVanillaPrefabsAvailable += AddClonedItems; 
 
             AddLocalizations();
-            Jotunn.Logger.LogInfo("RegisideWormholePotion is loaded");
+            
 
             harmony.PatchAll();
+
+            Jotunn.Logger.LogInfo("RegisideWormholePotion is loaded");
 
         }
 
         void OnDestroy()
         {
             harmony.UnpatchSelf();
+            //PrefabManager.OnVanillaPrefabsAvailable -= AddClonedItems; //suggested by chat gpt.
         }
 
         private void AddLocalizations()
@@ -56,7 +61,6 @@ namespace RegisideWormholePotion
             {
                 {"item_wormholePotion", "Potion of Frith’s Bond"},
                 {"item_wormholePotion_desc", "This elixir binds the threads of fate between companions. With a single sip, the distance melts away, and you are carried to the side of your shield-brothers and sisters, no matter how far the battle has taken them."},
-
                 {"wormhole_effect", "Frith’s Bond"},
                 {"wormhole_effect_desc", "Teleport to the location of a chosen ally. Cannot be used within realms barred by the gods."},
                 {"wormhole_effectstart", "Choose a friend to be reunited with."},
@@ -65,10 +69,10 @@ namespace RegisideWormholePotion
         }
 
         //Function to check if player can teleport.
-        private static bool CanPlayerUsePortals(Player player)
+        private static bool inventoryCanPortal(Inventory inventory)
         {
             // Get the player's inventory
-            Inventory inventory = player.GetInventory();
+            //Inventory inventory = player.GetInventory();
 
             // Check each item in the inventory
             foreach (ItemDrop.ItemData item in inventory.GetAllItems())
@@ -88,7 +92,7 @@ namespace RegisideWormholePotion
             StatusEffect effect = ScriptableObject.CreateInstance<StatusEffect>();
             effect.name = "WormholeEffect";
             effect.m_name = "$wormhole_effect";
-            effect.m_icon = AssetUtils.LoadSpriteFromFile("RegisideWormholePotion/assets/reee.png");
+            //effect.m_icon = AssetUtils.LoadSpriteFromFile("RegisideWormholePotion/assets/reee.png");
             effect.m_tooltip = "$wormhole_effect_desc";
             effect.m_startMessageType = MessageHud.MessageType.Center;
             effect.m_startMessage = "$wormhole_effectstart";
@@ -110,10 +114,10 @@ namespace RegisideWormholePotion
                 CraftingStation = CraftingStations.Cauldron,
                 MinStationLevel = 2
             };
-            
+
             wormholePotionConfig.AddRequirement(new RequirementConfig("MushroomYellow", 10));
-            wormholePotionConfig.AddRequirement(new RequirementConfig("Raspberry", 1));
-            wormholePotionConfig.AddRequirement(new RequirementConfig("Fish2", 1));
+            wormholePotionConfig.AddRequirement(new RequirementConfig("Raspberry", 3));
+            wormholePotionConfig.AddRequirement(new RequirementConfig("Fish2", 1)); // pike
 
             CustomItem wormholePotion = new CustomItem("WormholePotion", "MeadPoisonResist", wormholePotionConfig);
 
@@ -144,7 +148,15 @@ namespace RegisideWormholePotion
             PrefabManager.OnVanillaPrefabsAvailable -= AddClonedItems;
         }
 
+        private static void SetPlayerVisibility(Player player, bool isVisible)
+        {
+            foreach (Renderer renderer in player.GetComponentsInChildren<Renderer>())
+            {
+                renderer.enabled = isVisible;
+            }
+        }
 
+        // On map Left Click patch...
         [HarmonyPatch(typeof(Minimap), "OnMapLeftClick")]
         private static class Minimap_OnMapLeftClick_Patch
         {
@@ -169,8 +181,12 @@ namespace RegisideWormholePotion
                 if (targetPlayer == null)
                 {
                     Jotunn.Logger.LogInfo("No player found near the clicked position.");
-                    return false;
+                    MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "No player found nearby.",0, (Sprite)null, false);
+                    return true; //Proceed with default behavior, player not found.
                 }
+
+                // Hide the player's model before teleporting
+                //SetPlayerVisibility(localPlayer, false);
 
                 // Teleport to the target player's position
                 localPlayer.TeleportTo(targetPlayer.transform.position, localPlayer.transform.rotation, true); // takes you to closest player to click.
@@ -178,7 +194,9 @@ namespace RegisideWormholePotion
                 
                 Jotunn.Logger.LogInfo($"Teleported to {targetPlayer.GetPlayerName()}");
 
+
                 //Remove potion from inventory...
+
                 // Access the player's inventory
                 Inventory inventory = localPlayer.m_inventory;
 
@@ -197,6 +215,9 @@ namespace RegisideWormholePotion
                     Jotunn.Logger.LogInfo($"Item {itemName} not found in inventory.");
                 }
 
+                //start rendering character model again.
+                //SetPlayerVisibility(localPlayer, true);
+
                 // Set the map mode to small
                 if (Minimap.instance != null)
                 {
@@ -208,16 +229,27 @@ namespace RegisideWormholePotion
 
             private static Player FindClosestPlayer(Vector3 position)
             {
-                const float maxDistance = 10f; // Maximum distance in meters
+                const float maxDistance = 60f; // Maximum distance in meters
+                //const float maxDistance = float.MaxValue; // unlimited range from click.
+
 
                 float closestDistance = maxDistance;
                 Player closestPlayer = null;
 
                 foreach (Player otherPlayer in Player.GetAllPlayers())
                 {
+                    //log all players.
+                    Jotunn.Logger.LogInfo(otherPlayer.GetPlayerName());
+                    
+
                     if (otherPlayer == Player.m_localPlayer) continue; // Ignore the local player
 
+
                     float distance = Vector3.Distance(position, otherPlayer.transform.position);
+                    
+                    Jotunn.Logger.LogInfo(otherPlayer.GetPlayerName() + " Distance: " + distance);// Log the distance.
+
+                    //set return closest players location.
                     if (distance < closestDistance)
                     {
                         closestDistance = distance;
@@ -225,6 +257,10 @@ namespace RegisideWormholePotion
                     }
                 }
 
+                if (closestPlayer != null)
+                {
+                    Jotunn.Logger.LogInfo($"Closest Player is: {closestPlayer.GetPlayerName()}");
+                }
                 return closestPlayer;
             }
         }
@@ -236,7 +272,7 @@ namespace RegisideWormholePotion
         {
             public static bool Prefix(Player __instance, Inventory inventory, ItemDrop.ItemData item, bool checkWorldLevel = false)
             {
-                if (item == null || item.m_shared.m_name != "$item_wormholePotion") 
+                if (item == null || item.m_shared.m_name != "$item_wormholePotion")
                 {
                     return true; // Allow default behavior for other items
                 }
@@ -244,17 +280,35 @@ namespace RegisideWormholePotion
 
 
                 //check if local player can portal
-                Player localPlayer = Player.m_localPlayer;
-                if (!CanPlayerUsePortals(localPlayer))
+
+                if (!inventoryCanPortal(inventory))
                 {
-                    MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "The weight of the world binds you. Try dropping your ores.");
-                    return false; // not sure if this should be true or false or just return.
+                    MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "The weight of the world binds you. Try dropping your ores.", 0, (Sprite)null, false);
+                    return false; // cancel the item consume.
                 }
 
-                // Set wormHoleActive
-                //RegisideWormholePotion.wormHoleActive = true;
+                // Trigger the consume animation
+                if (__instance.m_zanim != null)
+                {
+                    Jotunn.Logger.LogWarning("Playing 'eat' animation.");
+                    __instance.m_zanim.SetTrigger("eat"); // Triggers the "eat" animation
+                }
+                else
+                {
+                    Jotunn.Logger.LogWarning("Player animation controller (m_zanim) is null!");
+                }
 
-                //apply wormhole status to player.
+                // Play eating sound
+                if (__instance.m_consumeItemEffects != null)
+                {
+                    __instance.m_consumeItemEffects.Create(__instance.transform.position, Quaternion.identity);
+                }
+                else
+                {
+                    Jotunn.Logger.LogWarning("Consume item effects not found!");
+                }
+
+                // Apply wormhole status to player.
                 // Retrieve the status effect from ObjectDB
                 StatusEffect statusEffect = ObjectDB.instance.GetStatusEffect("WormholeEffect".GetHashCode());
 
@@ -292,8 +346,10 @@ namespace RegisideWormholePotion
                 return false;
             }
 
-            
+
         }
+
+
 
 
         //Patch the Minimap funciton
@@ -303,7 +359,7 @@ namespace RegisideWormholePotion
             public static void Postfix(Minimap.MapMode mode)
             {
                 // Check if the map was opened...
-                if (mode != Minimap.MapMode.Small)
+                if (mode == Minimap.MapMode.Large)
                 {
                     return; //if so, ignore the rest.
                 }
@@ -328,13 +384,8 @@ namespace RegisideWormholePotion
 
                     // Remove wormhole effect from player.
                     localPlayer.m_seman.RemoveStatusEffect("WormholeEffect".GetHashCode());
-                    Jotunn.Logger.LogInfo("Wormhole effect removed.");
-                    
+                    Jotunn.Logger.LogInfo("Wormhole effect removed by map close.");
 
-                    //Jotunn.Logger.LogWarning("Wormhole Active?: " + RegisideWormholePotion.wormHoleActive);
-
-                    // Log the state change
-                    //Jotunn.Logger.LogInfo("wormHoleActive set to false because the map mode was changed to small.");
                 }
             }
         }

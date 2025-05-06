@@ -1,10 +1,9 @@
-﻿{
-  "name": "JotunnModStub",
-  "description": "",
-  "version_number": "0.0.1",
-  "website_url": "",
-  "dependencies": [
-    "denikson-BepInExPack_Valheim-5.4.2202",
-    "ValheimModding-Jotunn-2.23.0"
-  ]
+{
+    "name": "Wormhole_Potion",
+    "version_number": "0.1.1",
+    "website_url": "https://github.com/regiside/valheim-wormhole-potion",
+    "description": "Adds a potion that allows you to choose a player on the map to be teleported to. Let me know your thoughts on the github.'",
+    "dependencies": [
+        "ValheimModding-Jotunn-2.23.1"
+    ]
 }
