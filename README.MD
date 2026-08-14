@@ -8,5 +8,8 @@ The plugin adds a recipe to the cauldron which allows the player to make "potion
 ### Recipe
 The current recipe is: 10 yellow mushrooms, 3 Raspberry, and 1 Pike.
 
+## Changelog and releases
+See the [changelog](CHANGELOG.md) for the complete version history. Published builds are available from [GitHub Releases](https://github.com/regiside/valheim-wormhole-potion/releases/latest).
+
 ## Technical details
 Built using [Jötunn](https://github.com/Valheim-Modding/Jotunn) project stub.

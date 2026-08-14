@@ -9,7 +9,7 @@
 #
 
 # CSharp Sources
-*.cs text diff=csharp
+*.cs text diff=csharp eol=lf
 
 # Documents
 *.bibtex   text diff=bibtex

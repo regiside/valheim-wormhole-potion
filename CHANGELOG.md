@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
+## [0.1.2] - 2026-08-13
+
+### Changed
+- Player selection now uses Valheim's synchronized public map positions instead of nearby loaded player objects or network peers.
+- Map clicks use a zoom-aware selection radius and target the selected public player record directly.
+- Wormhole potions are consumed only after Valheim accepts the teleport.
+- Players who have disabled public-position sharing are not available as wormhole targets.
+- C# source files are normalized to LF line endings.
+
+### Fixed
+- Teleporting now works consistently for server hosts, connected clients, and client-to-client targets, including players far outside the loaded area.
+- Invalid map clicks, canceled targeting, and rejected teleports no longer consume the potion.
+- Removed the blocking RPC and ZDO position lookup that could time out or fail for distant players.
+- Success messages are no longer logged when teleportation fails.
+
  
 ## [0.1.1] - 2025-05-06
   

@@ -1,6 +1,6 @@
 {
     "name": "Wormhole_Potion",
-    "version_number": "0.1.1",
+    "version_number": "0.1.2",
     "website_url": "https://github.com/regiside/valheim-wormhole-potion",
     "description": "Adds a potion that allows you to choose a player on the map to be teleported to. Let me know your thoughts on the github.",
     "dependencies": [
